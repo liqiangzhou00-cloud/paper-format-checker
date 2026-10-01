@@ -1,29 +1,70 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>论文格式检查</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <h1>论文格式检查系统</h1>
-      <div class="upload-panel">
-        <input id="uploadFile" type="file" accept=".doc,.docx,.json" />
-        <button id="uploadBtn">开始检查</button>
-        <select id="filterType">
-          <option value="all">全部</option>
-          <option value="error">错误</option>
-          <option value="warning">警告</option>
-          <option value="info">信息</option>
-        </select>
+const uploadInput = document.getElementById('uploadFile');
+const uploadButton = document.getElementById('uploadBtn');
+const resultBox = document.getElementById('resultBox');
+const filterSelect = document.getElementById('filterType');
+const issueList = document.getElementById('issueList');
+let currentIssues = [];
+
+uploadButton.addEventListener('click', async () => {
+  const file = uploadInput.files[0];
+  if (!file) {
+    resultBox.textContent = '请选择要上传的论文文件。';
+    return;
+  }
+
+  resultBox.textContent = '正在检查...';
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch('http://localhost:8000/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await response.json();
+
+    const summary = data.summary || { error: 0, warning: 0, info: 0 };
+    resultBox.innerHTML = `
+      <div style="padding: 16px; background: #eef6ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+        <p><strong>标题:</strong> ${data.document_info?.title || '未检测到'}</p>
+        <p><strong>错误:</strong> ${summary.error} &nbsp; <strong>警告:</strong> ${summary.warning} &nbsp; <strong>信息:</strong> ${summary.info}</p>
       </div>
+    `;
 
-      <div id="resultBox" class="result-box"></div>
-      <ul id="issueList" class="issue-list"></ul>
-    </div>
+    currentIssues = data.issues || [];
+    renderIssues(currentIssues, filterSelect.value);
+  } catch (error) {
+    resultBox.textContent = '上传失败，请确认后端已启动。';
+  }
+});
 
-    <script src="upload.js"></script>
-  </body>
-</html>
+function renderIssues(issues, filter) {
+  issueList.innerHTML = '';
+  const visibleIssues = filter === 'all' ? issues : issues.filter(item => item.severity === filter);
+
+  if (!visibleIssues.length) {
+    issueList.innerHTML = '<li style="padding: 12px; color: #666;">没有符合当前筛选条件的问题。</li>';
+    return;
+  }
+
+  visibleIssues.forEach((issue) => {
+    const li = document.createElement('li');
+    li.className = `issue-item ${issue.severity}`;
+    li.innerHTML = `
+      <div class="meta-row">
+        <span class="badge ${issue.severity}">${issue.severity}</span>
+        <span>${issue.rule_id}</span>
+        <span>${issue.location || 'general'}</span>
+      </div>
+      <strong>${issue.title}</strong>
+      <p>${issue.message}</p>
+      <p>建议：${issue.suggestion || '请参考模板要求修正。'}</p>
+      <p>批注编号：${issue.annotation_id || 'N/A'}</p>
+    `;
+    issueList.appendChild(li);
+  });
+}
+
+filterSelect.addEventListener('change', () => {
+  renderIssues(currentIssues, filterSelect.value);
+});

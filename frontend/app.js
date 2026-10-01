@@ -1,134 +1,82 @@
-* {
-  box-sizing: border-box;
-}
+(() => {
+  const form = document.getElementById('check-form');
+  const issuesList = document.getElementById('issues');
+  const summaryBox = document.getElementById('summary');
 
-body {
-  margin: 0;
-  font-family: "Segoe UI", sans-serif;
-  background: #f4f7fb;
-  color: #1d2736;
-}
+  const buildPayload = () => {
+    const title = document.getElementById('title').value.trim();
+    const englishTitle = document.getElementById('englishTitle').value.trim();
+    const abstract = document.getElementById('abstract').value.trim();
+    const keywords = document.getElementById('keywords').value
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
 
-.app-shell {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
+    return {
+      title,
+      english_title: englishTitle,
+      abstract,
+      keywords,
+      sections: [
+        { title: '绪论', level: 1 },
+        { title: '本章小结', level: 2 },
+        { title: '总结与展望', level: 1 }
+      ],
+      references: [
+        { id: 1, text: 'IEEE 802.11 standard' },
+        { id: 2, text: 'WLAN architecture paper' },
+        { id: 3, text: 'Academic wireless network design' },
+        { id: 4, text: 'Campus network security review' }
+      ],
+      figures: [{ caption: '图2-1' }],
+      tables: [{ caption: '表3-1' }]
+    };
+  };
 
-.topbar {
-  margin-bottom: 16px;
-}
+  const renderIssues = (issues) => {
+    issuesList.innerHTML = '';
+    if (!issues || issues.length === 0) {
+      issuesList.innerHTML = '<li class="issue-item info">没有发现问题。</li>';
+      return;
+    }
 
-.layout {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 20px;
-}
+    issues.forEach(issue => {
+      const item = document.createElement('li');
+      item.className = `issue-item ${issue.severity}`;
+      item.innerHTML = `
+        <div class="issue-meta">
+          <span class="badge ${issue.severity}">${issue.severity}</span>
+          <span>${issue.rule_id}</span>
+          <span>${issue.location || 'general'}</span>
+        </div>
+        <strong>${issue.title}</strong>
+        <p>${issue.description}</p>
+        <div><em>建议：</em> ${issue.suggestion}</div>
+      `;
+      issuesList.appendChild(item);
+    });
+  };
 
-.left-panel,
-.right-panel {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-}
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    summaryBox.textContent = '正在检查...';
 
-form {
-  display: grid;
-  gap: 14px;
-}
+    try {
+      const response = await fetch('http://localhost:8000/api/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(buildPayload())
+      });
 
-label {
-  display: grid;
-  gap: 8px;
-  font-weight: 600;
-}
-
-input, textarea, button {
-  font: inherit;
-}
-
-input, textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #dfe7f1;
-  border-radius: 8px;
-}
-
-textarea {
-  min-height: 120px;
-  resize: vertical;
-}
-
-button {
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 11px 14px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.summary-box {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
-  padding: 12px 14px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-}
-
-.issue-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 12px;
-}
-
-.issue-item {
-  border: 1px solid #e5e7eb;
-  background: #f8fafc;
-  padding: 12px 14px;
-  border-radius: 8px;
-}
-
-.issue-item.error {
-  border-left: 5px solid #dc2626;
-}
-
-.issue-item.warning {
-  border-left: 5px solid #f59e0b;
-}
-
-.issue-item.info {
-  border-left: 5px solid #10b981;
-}
-
-.issue-meta {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 0.8rem;
-  color: #475569;
-  margin-bottom: 6px;
-}
-
-.badge {
-  border-radius: 999px;
-  padding: 4px 8px;
-  font-weight: 700;
-  color: white;
-  font-size: 0.7rem;
-}
-
-.badge.error { background: #dc2626; }
-.badge.warning { background: #f59e0b; }
-.badge.info { background: #10b981; }
-
-@media (max-width: 768px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
+      const result = await response.json();
+      const summary = result.summary || { error: 0, warning: 0, info: 0 };
+      summaryBox.textContent = `错误: ${summary.error} / 警告: ${summary.warning} / 信息: ${summary.info}`;
+      renderIssues(result.issues || []);
+    } catch (error) {
+      summaryBox.textContent = '检查失败，请确认后端服务已启动。';
+      issuesList.innerHTML = `<li class="issue-item error">${error.message}</li>`;
+    }
+  });
+})();

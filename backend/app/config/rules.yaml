@@ -1,16 +1,96 @@
-from __future__ import annotations
+rules:
+  - rule_id: COVER_TITLE_ALIGNMENT
+    rule_type: section
+    title: Title should be centered and formatted as a 3-level title
+    severity: error
+    description: Chinese title should be centered, with bold black font and consistent formatting.
+    location: cover
+    suggestion: Use a centered 3-level black body title and keep it consistent across materials.
 
-from pathlib import Path
-from typing import Any, Dict, List
+  - rule_id: COVER_TITLE_CONSISTENT
+    rule_type: structural
+    title: Title must match across all materials
+    severity: error
+    description: The title must be identical across the cover and supporting materials.
+    location: metadata
+    suggestion: Ensure the title is exactly the same, including punctuation, spaces, and capitalization.
 
-import yaml
+  - rule_id: ABSTRACT_LENGTH
+    rule_type: prose
+    title: Abstract length should be within 500-800 Chinese characters
+    severity: warning
+    description: Abstract length should be between 500 and 800 characters and written concisely.
+    location: abstract
+    suggestion: Keep the abstract focused on purpose, methods, results, and conclusions.
 
+  - rule_id: CHAPTER_SEPARATOR
+    rule_type: structure
+    title: Each chapter should begin on a new page
+    severity: error
+    description: New chapters should start on a new page.
+    location: section
+    suggestion: Insert a page break before each chapter heading.
 
-ROOT = Path(__file__).resolve().parent
-RULES_PATH = ROOT / "config" / "rules.yaml"
+  - rule_id: SECTION_LEVELING
+    rule_type: structure
+    title: Section hierarchy must follow levels 1, 2, 3
+    severity: warning
+    description: Chapter titles, section titles, and subsection titles should use a clear hierarchy.
+    location: section
+    suggestion: Use a consistent hierarchy with level 1, 2, and 3 headings only.
 
+  - rule_id: CHAPTER_SUMMARY
+    rule_type: structure
+    title: Summary should appear after each chapter from chapter 2 onward
+    severity: warning
+    description: Chapters after the first should include a brief summary section.
+    location: section
+    suggestion: Add a '本章小结' section after the chapter content.
 
-def load_rules() -> List[Dict[str, Any]]:
-    with RULES_PATH.open("r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-    return data.get("rules", [])
+  - rule_id: FIGURE_CAPTION_FORMAT
+    rule_type: figure
+    title: Figure captions must use the correct numbering and position
+    severity: error
+    description: Each figure requires a caption and the sequence should follow the chapter format.
+    location: figure
+    suggestion: Use a format such as '图2-1' and place the caption below the image.
+
+  - rule_id: TABLE_CAPTION_FORMAT
+    rule_type: table
+    title: Table captions must use the correct numbering and position
+    severity: error
+    description: Each table must have a caption above it and follow the chapter format.
+    location: table
+    suggestion: Use a format such as '表3-1' and place the caption above the table.
+
+  - rule_id: REFERENCE_SEQUENCE
+    rule_type: reference
+    title: Reference numbering must start at 1 and be sequential
+    severity: error
+    description: Citation markers must begin at [1] and follow the order of appearance.
+    location: references
+    suggestion: Ensure all references are numbered sequentially and without gaps.
+
+  - rule_id: REFERENCE_MIN_COUNT
+    rule_type: reference
+    title: Minimum reference count is required
+    severity: warning
+    description: The paper should include a sufficient number of references.
+    location: references
+    suggestion: Use at least 15 references, including recent and external works.
+
+  - rule_id: ACKNOWLEDGEMENT_SECTION
+    rule_type: section
+    title: Acknowledgements section must be in the correct position
+    severity: warning
+    description: Acknowledgements should be after the references and formatted as a separate section.
+    location: acknowledgement
+    suggestion: Place the acknowledgements section after the reference list.
+
+  - rule_id: APPENDIX_FORMAT
+    rule_type: appendix
+    title: Appendix should be separate and optional
+    severity: info
+    description: Appendices are optional and should be clearly labeled if present.
+    location: appendix
+    suggestion: If used, label appendices such as '附录1'.

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>论文格式检查</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <h1>论文格式检查系统</h1>
+      <div class="upload-panel">
+        <input id="uploadFile" type="file" accept=".doc,.docx,.json" />
+        <button id="uploadBtn">开始检查</button>
+        <select id="filterType">
+          <option value="all">全部</option>
+          <option value="error">错误</option>
+          <option value="warning">警告</option>
+          <option value="info">信息</option>
+        </select>
+      </div>
+
+      <div id="resultBox" class="result-box"></div>
+      <ul id="issueList" class="issue-list"></ul>
+    </div>
+
+    <script src="upload.js"></script>
+  </body>
+</html>

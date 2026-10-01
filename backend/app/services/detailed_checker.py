@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import json
 import re
+from io import BytesIO
 from typing import Any, Dict, List, Optional
 
 try:
     from docx import Document
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     DOCX_AVAILABLE = True
-except ImportError:  # pragma: no cover
+except Exception:  # pragma: no cover
     Document = None
     WD_ALIGN_PARAGRAPH = None
     DOCX_AVAILABLE = False
@@ -23,12 +25,11 @@ from app.models.document_model import (
 
 
 class DocxParser:
-    def __init__(self):
+    def __init__(self) -> None:
         self.docx_available = DOCX_AVAILABLE
 
     def parse(self, payload: Dict[str, Any]) -> DocumentModel:
         doc = DocumentModel()
-
         doc.title = str(payload.get("title", "")).strip()
         doc.english_title = str(payload.get("english_title", "")).strip()
         doc.abstract = str(payload.get("abstract", "")).strip()
@@ -85,69 +86,82 @@ class DocxParser:
                     )
                 )
 
-        doc.pages = payload.get("pages", {}) or {"front_pages": "roman", "main_pages": "arabic"}
+        doc.pages = payload.get("pages", {}) or {
+            "front_pages": "roman",
+            "main_pages": "arabic",
+        }
         return doc
 
     def extract_from_docx_bytes(self, file_bytes: bytes) -> DocumentModel:
         if not self.docx_available:
             raise ImportError("python-docx is not installed. Please install it with: pip install python-docx")
 
-        from io import BytesIO
-
-        document = Document(BytesIO(file_bytes))
+        word_doc = Document(BytesIO(file_bytes))
         doc = DocumentModel()
-        word_paragraphs = []
+        paragraphs: List[ParagraphModel] = []
 
-        for paragraph in document.paragraphs:
-            text = paragraph.text.strip()
+        for para in word_doc.paragraphs:
+            text = para.text.strip()
             if not text:
                 continue
 
-            font_name = paragraph.runs[0].font.name if paragraph.runs else "宋体"
-            font_size = str(paragraph.runs[0].font.size) if paragraph.runs and paragraph.runs[0].font.size else "12pt"
-            align = self._get_alignment(paragraph)
-
-            if self._is_heading(paragraph):
-                level = self._heading_level(paragraph)
+            if self._is_heading(para):
+                level = self._heading_level(para)
                 doc.sections.append(SectionModel(title=text, level=level, start_page=1))
                 continue
 
-            if self._is_title(paragraph):
-                if not doc.title:
-                    doc.title = text
+            if self._is_title(para) and not doc.title:
+                doc.title = text
                 continue
 
-            if "摘要" in text and len(text) < 200:
-                if not doc.abstract:
-                    doc.abstract = text.replace("摘要", "").strip()
+            if "摘要" in text and len(text) < 300 and not doc.abstract:
+                doc.abstract = text.replace("摘要", "").strip()
                 continue
 
             if "关键词" in text:
-                keywords_text = text.replace("关键词", "").replace("Keywords", "").strip()
-                doc.keywords = [k.strip() for k in re.split(r"[,，]", keywords_text) if k.strip()]
+                keyword_text = text.replace("关键词", "").replace("Keywords", "").strip()
+                doc.keywords = [
+                    item.strip() for item in re.split(r"[,，]", keyword_text) if item.strip()
+                ]
                 continue
 
-            word_paragraphs.append(
+            font_name = "宋体"
+            font_size = "12pt"
+            if para.runs:
+                first_run = para.runs[0]
+                if first_run.font.name:
+                    font_name = first_run.font.name
+                if first_run.font.size:
+                    font_size = str(first_run.font.size)
+
+            paragraphs.append(
                 ParagraphModel(
                     text=text,
                     font=font_name,
                     font_size=font_size,
-                    align=align,
+                    align=self._get_alignment(para),
                     line_spacing="1.25",
                     section_index=len(doc.sections),
                 )
             )
 
-        doc.paragraphs = word_paragraphs
+        doc.paragraphs = paragraphs
 
-        for table in document.tables:
-            values = [cell.text.strip() for row in table.rows for cell in row.cells if cell.text.strip()]
-            caption = " ".join(values[:5]).strip() or ""
+        for table in word_doc.tables:
+            cells = [cell.text.strip() for row in table.rows for cell in row.cells if cell.text.strip()]
+            caption = " ".join(cells[:5]).strip()
             doc.tables.append(TableModel(caption=caption, page=1))
 
-        for rel in document.part.rels.values():
-            if "image" in str(rel.target_ref).lower():
+        # simple figure detection: count inline objects via relationship names
+        for rel in word_doc.part.rels.values():
+            rel_target = str(getattr(rel, "target", "")).lower()
+            if "image" in rel_target or ".png" in rel_target or ".jpg" in rel_target:
                 doc.figures.append(FigureModel(caption="图", page=1))
+
+        if not doc.title:
+            title_candidate = self._guess_title_from_paragraphs(doc.paragraphs)
+            if title_candidate:
+                doc.title = title_candidate
 
         doc.pages = {"front_pages": "roman", "main_pages": "arabic"}
         return doc
@@ -187,3 +201,13 @@ class DocxParser:
         if paragraph.alignment == WD_ALIGN_PARAGRAPH.JUSTIFY:
             return "justify"
         return "left"
+
+    def _guess_title_from_paragraphs(self, paragraphs: List[ParagraphModel]) -> str:
+        for para in paragraphs:
+            text = para.text.strip()
+            if text and len(text) < 80 and not re.search(r"[。！？]", text):
+                return text
+        return ""
+
+
+__all__ = ["DocxParser"]

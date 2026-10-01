@@ -1,70 +1,47 @@
-const uploadInput = document.getElementById('uploadFile');
-const uploadButton = document.getElementById('uploadBtn');
-const resultBox = document.getElementById('resultBox');
-const filterSelect = document.getElementById('filterType');
-const issueList = document.getElementById('issueList');
-let currentIssues = [];
+from __future__ import annotations
 
-uploadButton.addEventListener('click', async () => {
-  const file = uploadInput.files[0];
-  if (!file) {
-    resultBox.textContent = '请选择要上传的论文文件。';
-    return;
-  }
+import json
+from typing import Any, Dict
 
-  resultBox.textContent = '正在检查...';
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
 
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await fetch('http://localhost:8000/api/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    const data = await response.json();
+from app.services.check_pipeline import CheckPipeline
 
-    const summary = data.summary || { error: 0, warning: 0, info: 0 };
-    resultBox.innerHTML = `
-      <div style="padding: 16px; background: #eef6ff; border: 1px solid #bfdbfe; border-radius: 8px;">
-        <p><strong>标题:</strong> ${data.document_info?.title || '未检测到'}</p>
-        <p><strong>错误:</strong> ${summary.error} &nbsp; <strong>警告:</strong> ${summary.warning} &nbsp; <strong>信息:</strong> ${summary.info}</p>
-      </div>
-    `;
+app = FastAPI(title="Paper Format Checker API", version="0.2.0")
 
-    currentIssues = data.issues || [];
-    renderIssues(currentIssues, filterSelect.value);
-  } catch (error) {
-    resultBox.textContent = '上传失败，请确认后端已启动。';
-  }
-});
 
-function renderIssues(issues, filter) {
-  issueList.innerHTML = '';
-  const visibleIssues = filter === 'all' ? issues : issues.filter(item => item.severity === filter);
+@app.post("/api/upload")
+async def upload_file(file: UploadFile = File(...)) -> JSONResponse:
+    try:
+        content = await file.read()
+        suffix = (file.filename or "").lower()
 
-  if (!visibleIssues.length) {
-    issueList.innerHTML = '<li style="padding: 12px; color: #666;">没有符合当前筛选条件的问题。</li>';
-    return;
-  }
+        pipeline = CheckPipeline()
+        payload: Dict[str, Any] = {
+            "title": "",
+            "english_title": "",
+            "abstract": "",
+            "keywords": [],
+            "sections": [],
+            "references": [],
+            "figures": [],
+            "tables": [],
+            "paragraphs": [],
+            "pages": {},
+        }
 
-  visibleIssues.forEach((issue) => {
-    const li = document.createElement('li');
-    li.className = `issue-item ${issue.severity}`;
-    li.innerHTML = `
-      <div class="meta-row">
-        <span class="badge ${issue.severity}">${issue.severity}</span>
-        <span>${issue.rule_id}</span>
-        <span>${issue.location || 'general'}</span>
-      </div>
-      <strong>${issue.title}</strong>
-      <p>${issue.message}</p>
-      <p>建议：${issue.suggestion || '请参考模板要求修正。'}</p>
-      <p>批注编号：${issue.annotation_id || 'N/A'}</p>
-    `;
-    issueList.appendChild(li);
-  });
-}
+        if suffix.endswith(".docx") or suffix.endswith(".doc"):
+            payload = {"file_bytes": content}
+        elif suffix.endswith(".json"):
+            payload = json.loads(content.decode("utf-8"))
 
-filterSelect.addEventListener('change', () => {
-  renderIssues(currentIssues, filterSelect.value);
-});
+        result = pipeline.run(payload)
+        return JSONResponse(content=result)
+    except Exception as exc:  # pragma: no cover
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/health")
+def health_check() -> Dict[str, str]:
+    return {"status": "ok", "service": "paper-format-checker"}

@@ -1,0 +1,16 @@
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, Dict, List
+
+import yaml
+
+
+ROOT = Path(__file__).resolve().parent
+RULES_PATH = ROOT / "config" / "rules.yaml"
+
+
+def load_rules() -> List[Dict[str, Any]]:
+    with RULES_PATH.open("r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    return data.get("rules", [])

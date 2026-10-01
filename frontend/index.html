@@ -1,0 +1,52 @@
+from __future__ import annotations
+
+from typing import Dict, List
+
+
+class SectionChecker:
+    def check(self, sections: List[Dict[str, object]]) -> List[Dict[str, str]]:
+        issues = []
+        for idx, section in enumerate(sections, start=1):
+            title = str(section.get("title", ""))
+            level = int(section.get("level", 1) or 1)
+            if level not in {1, 2, 3}:
+                issues.append({"rule_id": "SECTION_LEVELING", "severity": "warning", "message": f"Section {idx} has invalid level {level}."})
+            if "本章小结" in title and idx == 1:
+                issues.append({"rule_id": "CHAPTER_SUMMARY", "severity": "info", "message": "Chapter summary should not appear in the first chapter."})
+        return issues
+
+
+class StyleChecker:
+    def check(self, paragraphs: List[Dict[str, object]]) -> List[Dict[str, str]]:
+        issues = []
+        for idx, paragraph in enumerate(paragraphs, start=1):
+            font = str(paragraph.get("font", ""))
+            if font and "Times New Roman" not in font and "宋体" not in font and "黑体" not in font:
+                issues.append({"rule_id": "STYLE_FONT", "severity": "warning", "message": f"Paragraph {idx} uses an unknown or nonstandard font."})
+        return issues
+
+
+class TableFigureChecker:
+    def check(self, figures: List[Dict[str, str]], tables: List[Dict[str, str]]) -> List[Dict[str, str]]:
+        issues = []
+        for idx, figure in enumerate(figures, start=1):
+            caption = str(figure.get("caption", "")).strip()
+            if caption and not caption.startswith("图"):
+                issues.append({"rule_id": "FIGURE_CAPTION_FORMAT", "severity": "error", "message": f"Figure {idx} caption is not correctly formatted."})
+
+        for idx, table in enumerate(tables, start=1):
+            caption = str(table.get("caption", "")).strip()
+            if caption and not caption.startswith("表"):
+                issues.append({"rule_id": "TABLE_CAPTION_FORMAT", "severity": "error", "message": f"Table {idx} caption is not correctly formatted."})
+        return issues
+
+
+class ReferenceChecker:
+    def check(self, references: List[Dict[str, object]]) -> List[Dict[str, str]]:
+        issues = []
+        if len(references) < 15:
+            issues.append({"rule_id": "REFERENCE_MIN_COUNT", "severity": "warning", "message": "Minimum reference count is not reached."})
+        ref_ids = [int(item.get("id", 0)) for item in references]
+        if ref_ids and ref_ids != list(range(1, max(ref_ids) + 1)):
+            issues.append({"rule_id": "REFERENCE_SEQUENCE", "severity": "error", "message": "Reference IDs are not sequential."})
+        return issues

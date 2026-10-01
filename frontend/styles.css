@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paper Format Checker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <h1>论文格式检查系统</h1>
+      </header>
+
+      <main class="layout">
+        <section class="left-panel">
+          <h2>检测输入</h2>
+          <form id="check-form">
+            <label>
+              论文题目
+              <input type="text" id="title" value="Smart Campus WLAN Networking Design" />
+            </label>
+            <label>
+              英文题目
+              <input type="text" id="englishTitle" value="Smart Campus WLAN Networking Design" />
+            </label>
+            <label>
+              摘要
+              <textarea id="abstract">This paper analyzes the design of a campus wireless network and proposes a structured solution for coverage and security.</textarea>
+            </label>
+            <label>
+              关键词（逗号分隔）
+              <input type="text" id="keywords" value="WLAN, network design, campus security" />
+            </label>
+            <button type="submit">开始检查</button>
+          </form>
+        </section>
+
+        <section class="right-panel">
+          <h2>检测结果</h2>
+          <div id="summary" class="summary-box">等待检查...</div>
+          <ul id="issues" class="issue-list"></ul>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

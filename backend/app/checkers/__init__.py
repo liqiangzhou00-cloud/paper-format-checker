@@ -1,15 +1,15 @@
-from __future__ import annotations
+from .cover_checker import CoverChecker
+from .figure_table_checker import FigureTableChecker
+from .layout_checker import LayoutChecker
+from .reference_checker import ReferenceChecker
+from .section_checker import SectionChecker
+from .style_checker import StyleChecker
 
-from typing import Any, Dict, List
-
-from fastapi import FastAPI
-
-
-class CheckerAPI:
-    def __init__(self, app: FastAPI):
-        self.app = app
-
-    def register_routes(self):
-        @self.app.get("/api/summary")
-        def summary() -> Dict[str, Any]:
-            return {"status": "ready", "modules": ["parser", "rule_engine", "report_service"]}
+__all__ = [
+    "CoverChecker",
+    "FigureTableChecker",
+    "LayoutChecker",
+    "ReferenceChecker",
+    "SectionChecker",
+    "StyleChecker",
+]

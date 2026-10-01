@@ -1,96 +1,69 @@
 rules:
   - rule_id: COVER_TITLE_ALIGNMENT
-    rule_type: section
-    title: Title should be centered and formatted as a 3-level title
+    category: cover
     severity: error
-    description: Chinese title should be centered, with bold black font and consistent formatting.
-    location: cover
-    suggestion: Use a centered 3-level black body title and keep it consistent across materials.
-
-  - rule_id: COVER_TITLE_CONSISTENT
-    rule_type: structural
-    title: Title must match across all materials
-    severity: error
-    description: The title must be identical across the cover and supporting materials.
-    location: metadata
-    suggestion: Ensure the title is exactly the same, including punctuation, spaces, and capitalization.
-
-  - rule_id: ABSTRACT_LENGTH
-    rule_type: prose
-    title: Abstract length should be within 500-800 Chinese characters
+    description: 标题应填写完整，且位于封面居中位置
+  - rule_id: ENGLISH_TITLE_REQUIRED
+    category: title
     severity: warning
-    description: Abstract length should be between 500 and 800 characters and written concisely.
-    location: abstract
-    suggestion: Keep the abstract focused on purpose, methods, results, and conclusions.
-
-  - rule_id: CHAPTER_SEPARATOR
-    rule_type: structure
-    title: Each chapter should begin on a new page
-    severity: error
-    description: New chapters should start on a new page.
-    location: section
-    suggestion: Insert a page break before each chapter heading.
-
+    description: 英文题目应存在且与中文题目一致
+  - rule_id: KEYWORDS_COUNT
+    category: abstract
+    severity: warning
+    description: 关键词个数建议控制在3-5个
+  - rule_id: ABSTRACT_LENGTH_CHECK
+    category: abstract
+    severity: warning
+    description: 中文摘要应至少达到500字
   - rule_id: SECTION_LEVELING
-    rule_type: structure
-    title: Section hierarchy must follow levels 1, 2, 3
+    category: section
     severity: warning
-    description: Chapter titles, section titles, and subsection titles should use a clear hierarchy.
-    location: section
-    suggestion: Use a consistent hierarchy with level 1, 2, and 3 headings only.
-
-  - rule_id: CHAPTER_SUMMARY
-    rule_type: structure
-    title: Summary should appear after each chapter from chapter 2 onward
+    description: 章/节/小节层级必须符合规范
+  - rule_id: CHAPTER_SUMMARY_REQUIRED
+    category: chapter
     severity: warning
-    description: Chapters after the first should include a brief summary section.
-    location: section
-    suggestion: Add a '本章小结' section after the chapter content.
-
-  - rule_id: FIGURE_CAPTION_FORMAT
-    rule_type: figure
-    title: Figure captions must use the correct numbering and position
-    severity: error
-    description: Each figure requires a caption and the sequence should follow the chapter format.
-    location: figure
-    suggestion: Use a format such as '图2-1' and place the caption below the image.
-
-  - rule_id: TABLE_CAPTION_FORMAT
-    rule_type: table
-    title: Table captions must use the correct numbering and position
-    severity: error
-    description: Each table must have a caption above it and follow the chapter format.
-    location: table
-    suggestion: Use a format such as '表3-1' and place the caption above the table.
-
+    description: 从第2章开始应写本章小结
+  - rule_id: SUMMARY_SECTION
+    category: conclusion
+    severity: warning
+    description: 应包含总结与展望章节
+  - rule_id: BIBLIOGRAPHY_HEADING
+    category: bibliography
+    severity: warning
+    description: 参考文献应作为单独章节出现
   - rule_id: REFERENCE_SEQUENCE
-    rule_type: reference
-    title: Reference numbering must start at 1 and be sequential
+    category: bibliography
     severity: error
-    description: Citation markers must begin at [1] and follow the order of appearance.
-    location: references
-    suggestion: Ensure all references are numbered sequentially and without gaps.
-
-  - rule_id: REFERENCE_MIN_COUNT
-    rule_type: reference
-    title: Minimum reference count is required
+    description: 参考文献编号必须从[1]开始并按顺序连续
+  - rule_id: REFERENCES_MINIMUM_COUNT
+    category: bibliography
     severity: warning
-    description: The paper should include a sufficient number of references.
-    location: references
-    suggestion: Use at least 15 references, including recent and external works.
-
-  - rule_id: ACKNOWLEDGEMENT_SECTION
-    rule_type: section
-    title: Acknowledgements section must be in the correct position
+    description: 至少应有15篇参考文献
+  - rule_id: DOI_REMOVAL
+    category: bibliography
     severity: warning
-    description: Acknowledgements should be after the references and formatted as a separate section.
-    location: acknowledgement
-    suggestion: Place the acknowledgements section after the reference list.
-
-  - rule_id: APPENDIX_FORMAT
-    rule_type: appendix
-    title: Appendix should be separate and optional
-    severity: info
-    description: Appendices are optional and should be clearly labeled if present.
-    location: appendix
-    suggestion: If used, label appendices such as '附录1'.
+    description: 参考文献中不应保留 DOI
+  - rule_id: FIGURE_CAPTION_FORMAT
+    category: figure
+    severity: error
+    description: 图序应为“图X-X”并位于图下方
+  - rule_id: TABLE_CAPTION_FORMAT
+    category: table
+    severity: error
+    description: 表序应为“表X-X”并位于表上方
+  - rule_id: STYLE_FONT
+    category: style
+    severity: warning
+    description: 字体应符合论文模板要求
+  - rule_id: STYLE_ALIGNMENT
+    category: style
+    severity: warning
+    description: 段落对齐方式应符合规范
+  - rule_id: FRONT_MATTER_PAGE_NUMBER
+    category: pagination
+    severity: error
+    description: 摘要和目录页码应采用大写罗马数字
+  - rule_id: PAGE_NUMBERING_ARABIC_BODY
+    category: pagination
+    severity: error
+    description: 正文页码应采用阿拉伯数字
